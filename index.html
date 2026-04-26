@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Unit Converter - 3D Visualizer</title>
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --bg: #0f172a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 400px;
+            text-align: center;
+            transform-style: preserve-3d;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+
+        .unit-box {
+            margin: 20px 0;
+            position: relative;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .arrow {
+            font-size: 24px;
+            color: var(--primary);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .formula-tip {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        /* --- New Credit Animation Styles --- */
+        .credit-text {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            letter-spacing: 0.5px;
+        }
+
+        .credit-highlight {
+            font-weight: bold;
+            background: linear-gradient(90deg, #00d2ff, #ffffff, #3a7bd5, #00d2ff);
+            background-size: 300% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: shine 3s linear infinite;
+            display: inline-block;
+            text-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+        }
+
+        @keyframes shine {
+            0% { background-position: 0% center; }
+            100% { background-position: 300% center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>একক রূপান্তরকারী (3D)</h2>
+    <p>পদার্থবিজ্ঞানের ম্যাজিক টুল</p>
+
+    <div class="unit-box">
+        <input type="number" id="inputValue" placeholder="মান লিখুন..." oninput="convert()">
+        <select id="fromUnit" onchange="convert()">
+            <option value="km">কিলোমিটার (km)</option>
+            <option value="m" selected>মিটার (m)</option>
+            <option value="cm">সেন্টিমিটার (cm)</option>
+            <option value="mm">মিলিমিটার (mm)</option>
+            <option value="m3">ঘনমিটার (m³)</option>
+            <option value="cm3">ঘন সেমি (cm³)</option>
+        </select>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="unit-box">
+        <select id="toUnit" onchange="convert()">
+            <option value="km">কিলোমিটার (km)</option>
+            <option value="m">মিটার (m)</option>
+            <option value="cm" selected>সেন্টিমিটার (cm)</option>
+            <option value="mm">মিলিমিটার (mm)</option>
+            <option value="m3">ঘনমিটার (m³)</option>
+            <option value="cm3">ঘন সেমি (cm³)</option>
+        </select>
+    </div>
+
+    <div id="resultCard" class="result-card"></div>
+    
+    <div class="formula-tip" id="logicText">
+        বড় থেকে ছোটতে গেলে গুণ করো!
+    </div>
+
+    <div class="credit-text">
+        Made by <span class="credit-highlight">seiborlang gamax project</span>
+    </div>
+</div>
+
+<script>
+    function convert() {
+        const val = parseFloat(document.getElementById('inputValue').value);
+        const from = document.getElementById('fromUnit').value;
+        const to = document.getElementById('toUnit').value;
+        const resultCard = document.getElementById('resultCard');
+        const logicText = document.getElementById('logicText');
+
+        if (isNaN(val)) {
+            resultCard.style.display = 'none';
+            return;
+        }
+
+        // Conversion rates to meters (base unit)
+        const rates = {
+            km: 1000,
+            m: 1,
+            cm: 0.01,
+            mm: 0.001,
+            m3: 1, // volume base
+            cm3: 0.000001 // 1 cm3 = 10^-6 m3
+        };
+
+        let result;
+        
+        // Handle Volume separately to avoid logical error
+        if ((from.includes('3') && !to.includes('3')) || (!from.includes('3') && to.includes('3'))) {
+            result = "একক অসামঞ্জস্যপূর্ণ!";
+            logicText.innerText = "দৈর্ঘ্য এবং আয়তন আলাদা জিনিস!";
+        } else {
+            const valInBase = val * rates[from];
+            result = valInBase / rates[to];
+            
+            if (rates[from] > rates[to]) {
+                logicText.innerText = "আপনি বড় থেকে ছোট এককে যাচ্ছেন, তাই মান বাড়ছে।";
+            } else {
+                logicText.innerText = "আপনি ছোট থেকে বড় এককে যাচ্ছেন, তাই মান কমছে।";
+            }
+        }
+
+        resultCard.style.display = 'block';
+        resultCard.innerHTML = `ফলাফল: ${result.toLocaleString()} ${to}`;
+    }
+</script>
+
+</body>
+</html>
